@@ -1,5 +1,6 @@
 # 🟣 Agentic Productivity System with MCP
-> Assistente executivo cognitivo com memória persistente, processamento multimodal e orquestração de sub-agentes via MCP Protocol.
+
+> Cognitive executive assistant with persistent memory, multimodal processing, and sub-agent orchestration via MCP Protocol.
 
 [![n8n](https://img.shields.io/badge/n8n-Workflow-FF6D5A?logo=n8n)](https://n8n.io)
 [![Telegram](https://img.shields.io/badge/Telegram-Bot-26A5E4?logo=telegram)](https://telegram.org)
@@ -8,24 +9,24 @@
 
 ---
 
-## 📋 Visão Geral
+## 📋 Overview
 
-**Mira** é a orquestradora baseada em IA que centraliza serviços do Google Workspace (Calendar, Tasks, Gmail) e gerenciamento financeiro em uma interface conversacional no Telegram. O sistema implementa uma arquitetura cognitiva inspirada no modelo de memória humana, com processamento sensorial, memória de curto prazo e consolidação para memória de longo prazo.
+![Orchestrator](assets/orchestrator.png)
 
-![Orquestrador](assets/orchestrator.png)
+**Mira** is an AI-based orchestrator that centralizes Google Workspace services (Calendar, Tasks, Gmail) and financial management into a conversational interface on Telegram. The system implements a cognitive architecture inspired by the human memory model, featuring sensory processing, short-term memory, and consolidation into long-term memory.
 
-### Características Principais
+### Key Capabilities
 
-- 🧠 **Arquitetura Cognitiva**: Separação clara entre sensory memory, short-term e long-term memory
-- 🎙️ **Multimodal**: Processa texto, áudio, imagens e documentos via Google Gemini 2.0
-- 🔒 **Guardrails**: Detecção de conteúdo NSFW e tentativas de jailbreak
-- 🔧 **MCP Protocol**: Sub-agentes especializados para tarefas específicas
-- 📊 **RAG System**: Retrieval-Augmented Generation com Supabase Vector Store
-- ⚡ **Buffer Inteligente**: Agregação de mensagens para contexto conversacional
+* 🧠 **Cognitive Architecture**: Clear separation between sensory, short-term, and long-term memory.
+* 🎙️ **Multimodal**: Processes text, audio, images, and documents via Google Gemini 2.0.
+* 🔒 **Guardrails**: Detection of NSFW content and jailbreak attempts.
+* 🔧 **MCP Protocol**: Specialized sub-agents for specific tasks.
+* 📊 **RAG System**: Retrieval-Augmented Generation with Supabase Vector Store.
+* ⚡ **Smart Buffer**: Message aggregation for conversational context preservation.
 
 ---
 
-## 🏗️ Arquitetura do Sistema
+## 🏗️ System Architecture
 
 ### High-Level Overview
 
@@ -33,7 +34,7 @@
 graph TB
     subgraph "Input Layer"
         TG[Telegram Bot]
-        USER[Usuário]
+        USER[User]
     end
     
     subgraph "Sensory Processing"
@@ -98,17 +99,18 @@ graph TB
     AGENT --> SEND
     SEND --> CLEAN
     CLEAN --> BUFFER
+
 ```
 
 ---
 
-## 🧩 Componentes Técnicos
+## 🧩 Technical Components
 
 ### 1. Sensory Layer (Input Processing)
 
 ![Sensory Identifier](assets/sensory-identifier.png)
 
-**Responsabilidade**: Identificação e normalização de inputs multimodais.
+**Responsibility**: Identification and normalization of multimodal inputs.
 
 ```mermaid
 graph LR
@@ -129,16 +131,19 @@ graph LR
     
     GR -->|Pass| BUFFER[(Buffer)]
     GR -->|Fail| REJECT[Send Rejection]
+
 ```
 
 **Stack:**
-- **Google Gemini 2.0 Flash**: Transcrição de áudio, análise de imagens e extração de documentos
-- **Llama 3.1 70B**: Guardrails (NSFW detection, jailbreak prevention)
-- **Threshold**: 0.7 para ambos os guardrails
 
-**Métricas:**
-- Latência média: 800ms - 1.5s
-- Accuracy (guardrails): ~94%
+* **Google Gemini 2.0 Flash**: Audio transcription, image analysis, and document extraction.
+* **Llama 3.1 70B**: Guardrails (NSFW detection, jailbreak prevention).
+* **Threshold**: 0.7 for both guardrails.
+
+**Metrics:**
+
+* Average Latency: 800ms - 1.5s
+* Accuracy (guardrails): ~94%
 
 ---
 
@@ -146,36 +151,39 @@ graph LR
 
 ![Buffer](assets/sensory-memory.png)
 
-**Responsabilidade**: Agregação de mensagens sequenciais para construção de contexto.
+**Responsibility**: Aggregation of sequential messages to build context.
 
-**Algoritmo:**
+**Algorithm:**
+
 ```sql
--- 1. Inserção no buffer
+-- 1. Insert into buffer
 INSERT INTO message_buffer (chat_id, content, batch_id)
 VALUES ($chat_id, $content, NULL);
 
--- 2. Wait 3 segundos (permite múltiplas mensagens)
+-- 2. Wait 3 seconds (allows for multiple incoming messages)
 
--- 3. Marcação atômica com batch_id
+-- 3. Atomic marking with batch_id
 UPDATE message_buffer
 SET batch_id = $execution_id
 WHERE chat_id = $chat_id 
   AND batch_id IS NULL
 RETURNING content;
 
--- 4. Agregação
+-- 4. Aggregation
 SELECT STRING_AGG(content, '\n' ORDER BY id) as full_context
 FROM message_buffer
 WHERE batch_id = $execution_id;
 
--- 5. Limpeza pós-processamento
+-- 5. Post-processing Cleanup
 DELETE FROM message_buffer WHERE batch_id = $execution_id;
+
 ```
 
-**Vantagens:**
-- ✅ **Atomicidade**: Uso de `batch_id` evita race conditions
-- ✅ **Context Window**: Múltiplas mensagens em ~3s são processadas juntas
-- ✅ **Cleanup Automático**: Buffer limpo após cada ciclo
+**Advantages:**
+
+* ✅ **Atomicity**: Usage of `batch_id` prevents race conditions.
+* ✅ **Context Window**: Multiple messages within ~3s are processed together.
+* ✅ **Automatic Cleanup**: Buffer is cleared after each cycle.
 
 ---
 
@@ -215,30 +223,35 @@ graph TB
     CALC --> OUTPUT
     WEB --> OUTPUT
     LTM --> OUTPUT
+
 ```
 
 **Model:** GPT-4.1-mini (gpt-5.1)
-- **Context Window**: 10 mensagens (Short-term Memory)
-- **Temperature**: Default (0.7)
-- **Built-in**: Web Search (medium context)
+
+* **Context Window**: 10 messages (Short-term Memory).
+* **Temperature**: Default (0.7).
+* **Built-in**: Web Search (medium context).
 
 #### Prompt Engineering
 
-**Estratégias aplicadas:**
-1. **Chain-of-Thought (CoT)**: Tool `think` obrigatória para raciocínio explícito
-2. **Few-Shot Learning**: Exemplos de interações no system prompt
-3. **TOON (Token Oriented Object Notation)**: Estruturação hierárquica do prompt
-4. **Tool Calling**: Decisão baseada em intent analysis
+**Applied Strategies:**
+
+1. **Chain-of-Thought (CoT)**: Mandatory `think` tool for explicit reasoning.
+2. **Few-Shot Learning**: Interaction examples embedded in the system prompt.
+3. **TOON (Token Oriented Object Notation)**: Hierarchical prompt structuring.
+4. **Tool Calling**: Decision-making based on intent analysis.
 
 **System Prompt Structure:**
+
 ```
 🟣 SYSTEM_IDENTITY
 🟣 CONTEXT_VARIABLES (date, time, user)
 🟣 GLOBAL_CONSTRAINTS (formatting, data integrity)
 🟣 DECISION_PROTOCOL (priority order)
-🟣 TOOL_REGISTRY (specs técnicas)
+🟣 TOOL_REGISTRY (tech specs)
 🟣 ORCHESTRATION_PROTOCOL (workflow)
 🟣 FEW_SHOT_EXAMPLES
+
 ```
 
 ---
@@ -256,9 +269,11 @@ graph LR
     C -->|Keep| D[Last 10 messages]
     C -->|Archive| E[Long-term Consolidation]
     D --> F[Agent Context]
+
 ```
 
 **Schema:**
+
 ```sql
 CREATE TABLE n8n_chat_histories (
     id SERIAL PRIMARY KEY,
@@ -266,15 +281,18 @@ CREATE TABLE n8n_chat_histories (
     message JSONB,
     created_at TIMESTAMP DEFAULT NOW()
 );
+
 ```
 
-**Política de Retenção:**
-- **Active Window**: 10 últimas mensagens
-- **Cleanup**: Mensagens > 30 dias deletadas (monthly cron)
+**Retention Policy:**
+
+* **Active Window**: Last 10 messages.
+* **Cleanup**: Messages > 30 days are deleted (monthly cron).
 
 #### Long-term Memory (Episodic Memory)
 
 ![ltm](assets/ltm.png)
+
 
 ```mermaid
 graph TB
@@ -285,10 +303,10 @@ graph TB
     
     subgraph "Extraction Schema"
         EXTRACT --> SCHEMA{Extracted Fields}
-        SCHEMA --> T[tema_principal]
-        SCHEMA --> E[entidades]
-        SCHEMA --> A[acao_tomada]
-        SCHEMA --> I[informacao_relevante]
+        SCHEMA --> T[main_topic]
+        SCHEMA --> E[entities]
+        SCHEMA --> A[action_taken]
+        SCHEMA --> I[relevant_info]
     end
     
     subgraph "Vector Storage"
@@ -302,17 +320,21 @@ graph TB
         VDB --> SEARCH
         SEARCH --> CONTEXT[Top-K Results]
     end
+
 ```
 
 **Consolidation Query:**
+
 ```sql
--- Agregação de 24h
+-- 24h Aggregation
 SELECT STRING_AGG(message->>'content', E'\n' ORDER BY id) as batch
 FROM n8n_chat_histories
 WHERE created_at > NOW() - INTERVAL '1 day';
+
 ```
 
 **Vector Store Schema:**
+
 ```sql
 CREATE TABLE agent_memory (
     id BIGSERIAL PRIMARY KEY,
@@ -324,13 +346,15 @@ CREATE TABLE agent_memory (
 CREATE INDEX ON agent_memory 
 USING ivfflat (embedding vector_cosine_ops)
 WITH (lists = 100);
+
 ```
 
 **Retrieval Strategy:**
-- **Embedding Model**: `text-embedding-3-small` (OpenAI)
-- **Distance Metric**: Cosine Similarity
-- **Top-K**: 5 results
-- **Metadata Filtering**: `chat_id`, `date_range`
+
+* **Embedding Model**: `text-embedding-3-small` (OpenAI).
+* **Distance Metric**: Cosine Similarity.
+* **Top-K**: 5 results.
+* **Metadata Filtering**: `chat_id`, `date_range`.
 
 ---
 
@@ -338,7 +362,7 @@ WITH (lists = 100);
 
 ![sub-agents](assets/sub-agent-mcp.png)
 
-**MCP Protocol**: Model Context Protocol para comunicação entre agente principal e sub-agentes especializados.
+**MCP Protocol**: Model Context Protocol used for communication between the main agent and specialized sub-agents.
 
 ```mermaid
 graph TB
@@ -363,6 +387,7 @@ graph TB
     GTASKS --> RESPONSE
     
     RESPONSE --> AGENT
+
 ```
 
 **Sub-agents Specs:**
@@ -370,29 +395,32 @@ graph TB
 ![financial-agent](assets/financial-agent.png)
 
 | Agent | Capabilities | API | Scope |
-|-------|-------------|-----|-------|
+| --- | --- | --- | --- |
 | `calendar_agent` | CRUD events, list, search | Google Calendar | - |
 | `gmail_agent` | Send, reply, label, search | Gmail | - |
-| `financial_agent` | Log expenses, read balance | Google Sheets | `personal` \| `business` |
-| `financial_report` | Generate charts, summaries | Google Sheets + Chart.js | `personal` \| `business` |
+| `financial_agent` | Log expenses, read balance | Google Sheets | `personal` |
+| `financial_report` | Generate charts, summaries | Google Sheets + Chart.js | `personal` |
 | `tasks_agent` | CRUD tasks, mark complete | Google Tasks | - |
 
 **MCP Call Example:**
+
 ```json
 {
   "tool": "sub_agents",
   "params": {
     "agent": "calendar_agent",
-    "prompt": "Agendar reunião com Ana dia 15/01/2026 às 14h",
+    "prompt": "Schedule meeting with Ana on Jan 15th, 2026 at 2 PM",
     "scope": null
   }
 }
+
 ```
 
 **Response Handling:**
-- **Success**: Sub-agent retorna confirmação estruturada
-- **Failure**: Retry automático (max 2 tentativas)
-- **Media Output**: `financial_report` retorna imagem (bypassa texto)
+
+* **Success**: Sub-agent returns a structured confirmation.
+* **Failure**: Automatic retry (max 2 attempts).
+* **Media Output**: `financial_report` returns an image (bypassing text generation).
 
 ---
 
@@ -400,38 +428,46 @@ graph TB
 
 ![Error Handling](error-handling.png)
 
-Este sistema implementa um mecanismo robusto de tratamento de erros para garantir execução contínua e recuperação explícita. Particularmente, utiliza um **Error Trigger** no n8n para detectar falhas e desbloquear o estado atual do fluxo.
+This system implements a robust error handling mechanism to ensure continuous execution and explicit recovery. Specifically, it uses an **Error Trigger** in n8n to detect failures and unblock the current flow state.
 
-#### Fluxos de Erro Implementados
+#### Implemented Error Flows
 
-##### 1. Destravamento do Fluxo
+##### 1. Flow Unblocking Mechanism
 
-Um **Error Trigger** é ativado caso ocorra um problema na execução associada ao `message_buffer`. O fluxo anula o lote atual para evitar impasses e reprocessa mensagens:
+An **Error Trigger** is activated if a problem occurs in the execution associated with the `message_buffer`. The flow voids the current batch to prevent deadlocks and reprocesses messages:
 
-Fluxo:
-1. **Trigger**: Detecta evento de erro.
-2. **Unclogger**: Remove `batch_id` do `message_buffer` com o seguinte SQL:
-   ```sql
-   UPDATE message_buffer
-   SET batch_id = NULL
-   WHERE batch_id = '{{ $execution.id }}';
-   ```
+Flow:
 
-Este processo assegura que nenhuma mensagem permanecerá bloqueada, permitindo novas execuções para o fluxo em questão.
+1. **Trigger**: Detects error event.
+2. **Unclogger**: Removes `batch_id` from `message_buffer` using the following SQL:
+```sql
+UPDATE message_buffer
+SET batch_id = NULL
+WHERE batch_id = '{{ $execution.id }}';
 
-##### 2. Limpeza de Memória de Curto Prazo
+```
 
-Regularmente, um job programado (**Scheduled Trigger**) deleta registros obsoletos (interações acima de 30 dias):
 
-Fluxo:
-1. **Trigger**: Roda todo mês às 3h da manhã.
-2. **Cleaner**: Executa o seguinte comando:
-   ```sql
-   DELETE FROM n8n_chat_histories 
-   WHERE created_at < NOW() - INTERVAL '30 days';
-   ```
 
-Dessa forma, o desempenho mantém-se ideal, preservando apenas os 10 últimos registros para operações na `STM`.
+This process ensures no message remains locked, allowing new executions for the affected flow.
+
+##### 2. Short-Term Memory Cleanup
+
+A regularly scheduled job (**Scheduled Trigger**) deletes obsolete records (interactions older than 30 days):
+
+Flow:
+
+1. **Trigger**: Runs monthly at 3:00 AM.
+2. **Cleaner**: Executes the following command:
+```sql
+DELETE FROM n8n_chat_histories 
+WHERE created_at < NOW() - INTERVAL '30 days';
+
+```
+
+
+
+This ensures optimal performance by preserving only the relevant window for `STM` operations.
 
 ---
 
@@ -453,30 +489,34 @@ gantt
     Agent Processing      :4400, 2000ms
     section Output
     Telegram Send         :6400, 300ms
+
 ```
 
-| Cenário | Latência | Tokens | Custo (estimado) |
-|---------|----------|--------|------------------|
-| Texto simples (sem tools) | ~3s | 1k-3k | $0.001-0.003 |
-| Texto + tool calling  | ~7s-10s | 4k-15k | $0.004-0.015 |
+| Scenario | Latency | Tokens | Cost (estimated) |
+| --- | --- | --- | --- |
+| Simple text (no tools) | ~3s | 1k-3k | $0.001-0.003 |
+| Text + tool calling | ~7s-10s | 4k-15k | $0.004-0.015 |
 
 ### Memory Statistics
-- **Short-term Window**: 10 mensagens (rolling)
-- **Long-term Storage**: ~30 memories/mês
+
+* **Short-term Window**: 10 messages (rolling).
+* **Long-term Storage**: ~30 memories/month.
 
 ---
 
-## 🔧 Stack Técnica
+## 🔧 Tech Stack
 
 ### Core Infrastructure
-- **Orchestration**: n8n (self-hosted)
-- **Database**: PostgreSQL 15 + pgvector
-- **Vector Store**: Supabase (managed)
-- **Hosting**: Hostinger
+
+* **Orchestration**: n8n (self-hosted)
+* **Database**: PostgreSQL 15 + pgvector
+* **Vector Store**: Supabase (managed)
+* **Hosting**: Hostinger
 
 ### AI Models
+
 | Component | Model | Provider | Purpose |
-|-----------|-------|----------|---------|
+| --- | --- | --- | --- |
 | Main Agent | GPT-4.1-mini | OpenAI | Cognitive orchestration |
 | Transcription | Gemini 2.0 Flash | Google | Audio → Text |
 | Image Analysis | Gemini 2.0 Flash | Google | Vision → Text |
@@ -486,93 +526,105 @@ gantt
 | Embeddings | text-embedding-3-small | OpenAI | Vector generation |
 
 ### Integrations
-- **Telegram Bot API**: User interface
-- **Google Cloud Platform**:
-  - Calendar API
-  - Gmail API
-  - Tasks API
-  - Sheets API
-- **MCP Protocol**: Custom sub-agent server
+
+* **Telegram Bot API**: User interface
+* **Google Cloud Platform**:
+* Calendar API
+* Gmail API
+* Tasks API
+* Sheets API
+
+
+* **MCP Protocol**: Custom sub-agent server
 
 ---
 
-## 🚀 Casos de Uso
+## 🚀 Use Cases
 
-### 1. Gestão de Agenda
+### 1. Agenda Management
+
 ```
-👤 User: "Almoço com a Ana amanhã 13h"
+👤 User: "Lunch with Ana tomorrow at 1 PM"
 🟣 Mira: [Calls calendar_agent]
-       "Combinado! Agendei seu Almoço com a Ana 
-        para amanhã (15/01) às 13h. ✅"
+       "Done! Scheduled Lunch with Ana 
+        for tomorrow (Jan 15) at 1 PM. ✅"
+
 ```
 
-### 2. Controle Financeiro
+### 2. Financial Control
+
 ```
-👤 User: "Gastei 50 reais no almoço"
-🟣 Mira: "Esse gasto foi Pessoal ou da Empresa?"
-👤 User: "Foi da empresa"
+👤 User: "Spent $50 on lunch"
+🟣 Mira: "Was this Personal or Business expense?"
+👤 User: "Business"
 🟣 Mira: [Calls financial_agent]
-       "Registrado! 💰 R$ 50,00 (Empresa - Alimentação)"
+       "Logged! 💰 $50.00 (Business - Food)"
+
 ```
 
-### 3. Relatórios Visuais
+### 3. Visual Reporting
+
 ```
-👤 User: "Quanto gastei esse mês?"
-🟣 Mira: "Você quer o relatório Pessoal ou de Negócios?"
-👤 User: "Pessoal"
+👤 User: "How much did I spend this month?"
+🟣 Mira: "Do you want the Personal or Business report?"
+👤 User: "Personal"
 🟣 Mira: [Calls financial_report]
-       [Envia gráfico PNG via Telegram]
+       [Sends PNG chart via Telegram]
+
 ```
 
-### 4. Recuperação de Contexto
+### 4. Context Retrieval
+
 ```
-👤 User: "O que eu combinei com o Carlos na reunião passada?"
+👤 User: "What did I agree with Carlos in the last meeting?"
 🟣 Mira: [Searches long-term memory]
-       "Na reunião de 10/01 você combinou com o Carlos:
-        • Entregar proposta até 20/01
-        • Revisar planilha de custos
-        • Próxima reunião: 25/01 às 15h"
+       "In the meeting on Jan 10th, you agreed with Carlos to:
+        • Deliver the proposal by Jan 20th
+        • Review the cost spreadsheet
+        • Next meeting: Jan 25th at 3 PM"
+
 ```
 
 ---
 
-## 📄 Documentação Técnica Completa
+## 📄 Full Technical Documentation
 
-Este README apresenta a arquitetura high-level do projeto. Para acesso à documentação técnica completa, incluindo:
+This README presents the high-level architecture of the project. For access to the complete technical documentation, including:
 
-- 🔧 Setup guide com credenciais mock
-- 📊 Análise de custos detalhada
-- 🎥 Video demos de casos de uso
-- 📝 Workflow JSON sanitizado
-- 🧪 Testes de performance
+* 🔧 Setup guide with mock credentials
+* 📊 Detailed cost analysis
+* 🎥 Video demos of use cases
+* 📝 Sanitized Workflow JSON
+* 🧪 Performance tests
 
-**Entre em contato** via codeajr@gmail.com.
-
----
-
-## 🤝 Contribuições
-
-Este é um projeto proprietário desenvolvido para uso pessoal/comercial. O código-fonte completo não está disponível publicamente, mas sugestões e discussões técnicas são bem-vindas via Issues.
+**Contact me** via codeajr@gmail.com.
 
 ---
 
-## 📝 Licença
+## 🤝 Contributions
 
-**Proprietary License** - Todos os direitos reservados.
-
-Este projeto é confidencial e contém integrações proprietárias. A documentação é compartilhada apenas para fins de portfolio técnico.
+This is a proprietary project developed for personal/commercial use. The full source code is not publicly available, but technical suggestions and discussions are welcome via Issues.
 
 ---
 
-## 👤 Autor
+## 📝 License
+
+**Proprietary License** - All rights reserved.
+
+This project is confidential and contains proprietary integrations. This documentation is shared solely for technical portfolio purposes.
+
+---
+
+## 👤 Author
 
 **André Codea**
-- LinkedIn: https://linkedin.com/in/andrecodea
-- GitHub: https://github.com/andrecodea
-- Email: codeajr@gmail.com
+
+* LinkedIn: [https://linkedin.com/in/andrecodea](https://linkedin.com/in/andrecodea)
+* GitHub: [https://github.com/andrecodea](https://github.com/andrecodea)
+* Email: codeajr@gmail.com
 
 ---
 
 <p align="center">
-  <i>Built with ❤️ using n8n, OpenAI, and lots of ☕</i>
+<i>Built with ❤️ using n8n, OpenAI, and lots of ☕</i>
 </p>
